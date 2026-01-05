@@ -373,7 +373,7 @@ def run():
             with col3:
                 symbol = st.selectbox("Select Index", ["NIFTY", "SENSEX"], index=0, key="symbol")
             with col4:
-                expiry = st.date_input("Select Expiry Date", value=pd.to_datetime("2025-09-23"), key="expiry")
+                expiry = st.date_input("Select Expiry Date", value=pd.to_datetime("2026-01-01"), key="expiry")
             st.markdown('</div>', unsafe_allow_html=True)
 
         # Calculate Button
@@ -420,6 +420,12 @@ def run():
                             except Exception as e:
                                 st.error(f"Error reading Summary Excel: {e}")
                                 return
+
+                        df1 = df1[
+                                    df1["Telegram ID(s)"].notna() &
+                                    (df1["Telegram ID(s)"].astype(str).str.strip() != "") &
+                                    (df1["Telegram ID(s)"] != 0)
+                                ]
 
                         try:
                             df2 = pd.read_csv(uploaded_orderbook, index_col=False)
@@ -811,7 +817,9 @@ def run():
                                 "REALIZED_PNL": float(dict2_fmt[user]),
                                 "UNREALIZED_PNL": float(dict3_fmt[user])
                             })
-                        df_display = pd.DataFrame(rows)
+                        df_display = pd.DataFrame(rows).rename(
+                            columns={"UNREALIZED_PNL": "Net Settlement Value"}
+                        )
 
                         # Prepare detailed position
                         df3_not["Net settlement value"] = np.nan
@@ -886,15 +894,18 @@ def run():
                                     "User Type": user_type,
                                     "Telegram ID": telegram_id,
                                     "Realized PNL": realized_pnl,
-                                    "Unrealized PNL": unrealized_pnl,
+                                    # "Unrealized PNL": unrealized_pnl,
                                     "Net Settlement Value": net_settlement,
                                     "Max Loss": int(max_loss)
                                 })
 
                             df_maxloss = pd.DataFrame(maxloss_rows)
 
+                            # df_maxloss = df_maxloss.drop(columns=["Net Settlement Value"], errors="ignore")
+                            # df_maxloss = df_maxloss.rename(columns={"Unrealized PNL": "Net Settlement Value"})
+
                             total_realized = df_display["REALIZED_PNL"].sum()
-                            total_unrealized = df_display["UNREALIZED_PNL"].sum()
+                            total_unrealized = df_display["Net Settlement Value"].sum()
                             total_pnl = total_realized + total_unrealized
                             num_users = len(df_display)
 
@@ -1097,7 +1108,7 @@ def run():
                     st.markdown(f"""
                     <div class="metric-card">
                         <h3>₹{st.session_state.total_unrealized:,.2f}</h3>
-                        <p>Total Unrealized PNL</p>
+                        <p>Total Settlement Value</p>
                         <span class="{'positive' if st.session_state.total_unrealized >= 0 else 'negative'}">●</span>
                     </div>
                     """, unsafe_allow_html=True)
@@ -1128,12 +1139,12 @@ def run():
                     st.session_state.df_maxloss.style.format({
                         "Telegram ID": "{:.2f}",
                         "Realized PNL": "{:.2f}",
-                        "Unrealized PNL": "{:.2f}",
+                        "Net Settlement Value": "{:.2f}",
                         "Net Settlement Value": "{:.2f}",
                         "Max Loss": "{:d}"
                     }).map(
                         lambda x: "color: #EF4444" if isinstance(x, (int, float)) and x < 0 else "color: #10B981",
-                        subset=["Realized PNL", "Unrealized PNL", "Net Settlement Value", "Max Loss"]
+                        subset=["Realized PNL", "Net Settlement Value", "Max Loss"]
                     ),
                     use_container_width=True,
                     hide_index=True
