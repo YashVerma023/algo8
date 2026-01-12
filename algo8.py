@@ -527,7 +527,7 @@ def run():
 
                         # Not Noren Calculation
                         not_noren_data_pos = pd.DataFrame()
-                        required_df3_cols = ["UserID", "Net Qty", "Sell Avg Price", "Buy Avg Price", "Sell Qty", "Buy Qty", "Realized Profit", "Unrealized Profit"]
+                        required_df3_cols = ["UserID", "Net Qty", "Sell Avg Price", "Buy Avg Price", "Sell Qty", "Buy Qty"]
                         missing_df3_cols = [col for col in required_df3_cols if col not in df3_not.columns]
                         if missing_df3_cols:
                             st.error(f"Missing columns in Position CSV for Non-Noren: {', '.join(missing_df3_cols)}")
@@ -1631,3 +1631,4 @@ def run():
 
 if __name__ == "__main__":
     run()
+
